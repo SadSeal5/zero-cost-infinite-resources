@@ -1,0 +1,14 @@
+{
+  "name": "zero-cost-infinite-resources",
+  "version": "1.0.0",
+  "title": "Zero-Cost Infinite Resources",
+  "author": "SadSeal5",
+  "factorio_version": "2.1",
+  "dependencies": [
+    "base >= 2.1.0",
+    "? space-age >= 2.1.0",
+    "? quality >= 2.1.0",
+    "? elevated-rails >= 2.1.0"
+  ],
+  "description": "Ultra-lightweight infinite ores and fluids for Factorio 2.1 using native C++ engine mechanics. Near-zero performance impact (0 UPS overhead)."
+}
