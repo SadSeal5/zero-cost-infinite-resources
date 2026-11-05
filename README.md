@@ -9,12 +9,14 @@ Ultra-lightweight infinite ores and fluids for Factorio 2.1 utilizing native C++
 - **True 0 UPS Overhead**: Operates entirely during the prototype data loading phase (`data-final-fixes.lua`). No `on_tick`, `on_resource_depleted`, or `on_player_mined_entity` event loops exist in runtime.
 - **Infinite Solid Ores**: Iron ore, copper ore, coal, stone, uranium, calcite, tungsten, scrap, and custom modded solid ores will never deplete.
 - **Infinite Fluids**: Crude oil, fluorine vents, sulfuric acid geysers, lithium brine, and modded fluids retain their yield without drying up.
+- **Space Age & DLC Geyser Preservation**: Native infinite fluids and geysers (such as Space Age sulfuric acid geysers and fluorine vents) retain their carefully balanced prototype yield baselines (`normal` / `minimum`) rather than being forcibly overwritten.
+- **Sprite Stage Richness Guarantee**: Solid ore patches reset prototype `stage_counts` to 0, ensuring Factorio's C++ rendering engine always displays the visually fullest Stage 1 graphics, eliminating barren dirt tiles.
 - **Configurable Depletion Prevention**: By default, disables yield degradation completely (`infinite_depletion_amount = 0`), ensuring patches mine at constant speed forever.
 - **Configurable Normal Baselines**: Separate configurable normal richness baselines for solid ores (default 1,000) and fluids (default 300,000).
 - **Engine Balance Invariants**: Robust yield clamping ensures `normal >= minimum` at all times, preventing engine calculation clamping when minimum yield exceeds 100%.
 - **Customizable Minimum Yield**: Configure the yield percentage floor (1% to 100%, default 100%).
 - **Resource Blacklist**: Exclude specific resources by prototype name (comma or space separated).
-- **Multi-Surface Admin Restoration Command**: Target the active surface, sweep all surfaces, or limit by radius via `/refill-infinite-resources`, with automatic space platform safety and headless stdout support.
+- **Multi-Surface Admin Restoration Command**: Target a local radius around the player (default 100 tiles), the active ground surface, a named surface, or sweep all planetary surfaces via `/refill-infinite-resources`, with remote view platform fallback and headless stdout/RCON logging.
 - **Space Age & DLC Ready**: Seamlessly supports Factorio base game, Space Age, Quality, and Elevated Rails expansions.
 
 ---
@@ -25,7 +27,7 @@ Traditional infinite resource mods often register runtime Lua hooks (`script.on_
 
 **Zero-Cost Infinite Resources** achieves infinite resources natively:
 1. During startup (`data-final-fixes.lua`), the mod flags matching `resource` prototypes with `infinite = true`.
-2. It sets `infinite_depletion_amount = 0` and configures `normal` / `minimum` yield baselines, strictly enforcing `normal >= minimum`.
+2. It sets `infinite_depletion_amount = 0` and configures `normal` / `minimum` yield baselines, strictly enforcing `normal >= minimum` while preserving existing balance on native infinite resources.
 3. Factorio's native C++ engine automatically handles mining without entity deletion or yield degradation, spending 0 Lua execution cycles during gameplay.
 
 ---
@@ -50,14 +52,17 @@ You can adjust these settings in **Settings -> Mod settings -> Startup**:
 
 ## Console Commands
 
-### `/refill-infinite-resources [all | <radius>]`
+### `/refill-infinite-resources [<radius 1-1000> | surface | <surface_name> | all]`
 - **Permission**: Admin only (or single-player console / dedicated server RCON).
 - **Function**: Restores existing infinite resource entities whose amount has dropped below their normal or initial capacity. Ideal when adding this mod to an existing playthrough where patches have already degraded.
 - **Parameters**:
-  - *(no argument)*: Sweeps infinite resource patches on the calling player's physical/active surface (or primary game surface).
-  - `all`: Sweeps all planetary/ground surfaces across the entire game (omits space platforms).
-  - `<radius>` (e.g. `/refill-infinite-resources 50`): Sweeps only within the specified tile radius (up to 1000 tiles) around the calling player's physical position.
-- **Headless & Dedicated Server Support**: Automatically writes execution reports to stdout, RCON console, and log files when run by server consoles (`player == nil`).
+  - *(no argument)*: Defaults to a 100-tile radius around the calling player on their active ground surface (or surface 1 for headless/RCON).
+  - `<radius>` (e.g. `/refill-infinite-resources 50`): Sweeps within the specified tile radius (1 to 1000 tiles) around the player's physical position.
+  - `surface`: Sweeps the caller's entire current ground surface. If the player is in remote view looking at a space platform, it automatically falls back to the player's physical ground surface.
+  - `<surface_name>` (e.g. `/refill-infinite-resources vulcanus`): Sweeps the specified ground surface.
+  - `all`: Sweeps all planetary/ground surfaces across the entire game (safely excludes space platforms), sorted deterministically.
+- **Platform Safety & Remote View Fallback**: Space platforms do not have ground resource patches. The command automatically detects remote viewing of platforms and targets the player's physical surface, or reports that platforms are not applicable.
+- **Headless & Dedicated Server Support**: Automatically writes execution reports and audit messages to stdout, RCON console, and Factorio log files (`factorio-current.log`).
 
 ---
 

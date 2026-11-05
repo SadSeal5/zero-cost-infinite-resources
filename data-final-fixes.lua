@@ -23,11 +23,8 @@ local function is_resource_fluid(resource)
     if minable.results then
       for _, product in pairs(minable.results) do
         local prod_name = product.name or product[1]
-        local prod_type = product.type or (not product.name and "item")
-        if prod_type == "fluid" then
-          return true
-        end
-        if prod_type ~= "item" and prod_name and data.raw.fluid and data.raw.fluid[prod_name] then
+        local prod_type = product.type or "item"
+        if prod_type == "fluid" or (prod_name and data.raw.fluid and data.raw.fluid[prod_name] ~= nil) then
           return true
         end
       end
@@ -41,13 +38,23 @@ if data.raw.resource then
     if resource.minable and not blacklist[string.lower(name)] then
       local is_fluid = is_resource_fluid(resource)
       if (is_fluid and enable_fluids) or (not is_fluid and enable_solid) then
+        local was_infinite = resource.infinite
         resource.infinite = true
         local default_normal = is_fluid and fluid_normal or solid_normal
-        resource.normal = default_normal
-        local min_amount = math.max(1, math.floor(resource.normal * (min_yield_percent / 100)))
-        resource.minimum = min_amount
+        if not was_infinite or not resource.normal then
+          resource.normal = default_normal
+        end
+        if not was_infinite or not resource.minimum then
+          local min_amount = math.max(1, math.floor(resource.normal * (min_yield_percent / 100)))
+          resource.minimum = min_amount
+        end
         if prevent_depletion then
           resource.infinite_depletion_amount = 0
+        end
+        if resource.stage_counts and not is_fluid then
+          for i = 1, #resource.stage_counts do
+            resource.stage_counts[i] = 0
+          end
         end
       end
     end
