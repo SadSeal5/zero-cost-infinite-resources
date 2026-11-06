@@ -1,5 +1,5 @@
 local function print_help(player)
-  local help_msg = "Usage: /refill-infinite-resources [<radius 1-1000> | surface | <surface_name> | all]"
+  local help_msg = "Usage: /refill-infinite-resources [<radius 1-1000> | surface | <surface_name> | all] (Console/Headless requires explicit parameters)"
   if player then
     player.print(help_msg)
   else
@@ -60,13 +60,8 @@ local function refill_resources(command)
       table.insert(surfaces_to_scan, target_surface)
       scope_str = string.format("radius %d on %s", radius, target_surface.name)
     else
-      local target_surface = get_default_headless_surface()
-      if not target_surface then
-        log("[Zero-Cost Infinite Resources] Error: No ground surfaces found.")
-        return
-      end
-      table.insert(surfaces_to_scan, target_surface)
-      scope_str = string.format("surface %s", target_surface.name)
+      print_help(nil)
+      return
     end
   else
     local num = tonumber(param)
@@ -143,7 +138,12 @@ local function refill_resources(command)
   local filter = {type = "resource"}
   if radius and player then
     local target_surface = surfaces_to_scan[1]
-    local pos = (target_surface == player.physical_surface and (player.physical_position or player.position)) or player.position or player.physical_position
+    local pos
+    if player.controller_type == defines.controllers.remote and player.surface == target_surface then
+      pos = player.position or player.physical_position
+    else
+      pos = player.physical_position or player.position
+    end
     filter.position = pos
     filter.radius = radius
   end

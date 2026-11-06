@@ -41,22 +41,24 @@ if data.raw.resource then
         local was_infinite = resource.infinite
         resource.infinite = true
         local default_normal = is_fluid and fluid_normal or solid_normal
-        if not was_infinite or not resource.normal then
+        if not was_infinite or not resource.normal or (is_fluid and fluid_normal ~= 300000) or (not is_fluid and solid_normal ~= 1000) then
           resource.normal = default_normal
         end
-        if not was_infinite or not resource.minimum then
-          local min_amount = math.max(1, math.floor(resource.normal * (min_yield_percent / 100)))
-          resource.minimum = min_amount
+        local calculated_min = math.max(1, math.floor(resource.normal * (min_yield_percent / 100)))
+        if not was_infinite or not resource.minimum or min_yield_percent ~= 20 then
+          resource.minimum = calculated_min
         end
         if prevent_depletion then
           resource.infinite_depletion_amount = 0
         end
-        if resource.stage_counts and not is_fluid then
-          for i = 1, #resource.stage_counts do
-            resource.stage_counts[i] = 0
+        if resource.stage_counts and not is_fluid and #resource.stage_counts > 0 then
+          local num_stages = #resource.stage_counts
+          for i = 1, num_stages do
+            resource.stage_counts[i] = math.floor(resource.normal * ((num_stages - i + 1) / num_stages))
           end
         end
       end
     end
   end
 end
+
